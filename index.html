@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dog Quiz</title>
+</head>
+<body>
+    <center>
+        <button disabled id="shuffle">Start</button><br>
+        <img src="" id="dogimg" width="300px">
+    <br>
+    <button id="choice1"></button>
+    <button id="choice2"></button>
+    <button id="choice3"></button><br>
+    <h3 id="result"></h3>
+    </center>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script type="module">
+        async function translation(url){
+            let dogname = await fetch(url);
+            dogname = await dogname.json();
+            return dogname;
+        }
+        import doglist_e from "https://dog.ceo/api/breeds/list/all" assert {type:"json"};
+        console.log(doglist_e);
+        let doglist_j = new Object();
+        let translationPromises = Object.keys(doglist_e.message).map((key) => {
+            let url = "https://api-free.deepl.com/v2/translate?auth_key=DEEPL API HERE&text=" + key + "&target_lang=JA";
+            return translation(url).then((value) => {
+                return {key: key, value: value.translations[0].text};
+            });
+        });
+
+        Promise.all(translationPromises).then((results) => {
+            results.forEach((result) => {
+                doglist_j[result.key] = result.value;
+            });
+            console.log(doglist_j);
+            console.log(doglist_j.affenpinscher);
+            console.log(Object.keys(doglist_j).length);
+            $("#shuffle").prop("disabled", false);
+        });
+        
+        let correct="";
+
+        $("#shuffle").on("click", function() {
+            let keys = Object.keys(doglist_j);
+            let randomKey = keys[Math.floor(Math.random() * keys.length)];
+            let url = `https://dog.ceo/api/breed/${randomKey}/images/random`;
+            fetch(url)
+                .then((response) => response.json())
+                .then((data) => {
+                    $("#dogimg").attr("src", data.message);
+                });
+            correct=randomKey;
+            let correctButton = Math.floor(Math.random() * 3) + 1;
+            for (let i = 1; i <= 3; i++) {
+                if (i == correctButton) {
+                    $(`#choice${i}`).text(doglist_j[randomKey]);
+                } else {
+                    let randomKey = keys[Math.floor(Math.random() * keys.length)];
+                    $(`#choice${i}`).text(doglist_j[randomKey]);
+                }
+            }
+            $("#result").text("");
+        });
+        $("button[id^='choice']").on("click", function() {
+            let choice = $(this).text();
+            if (choice == doglist_j[correct]) {
+                $("#result").text("正解！");
+            } else {
+                $("#result").text("不正解！正解は"+doglist_j[correct]+"です。");
+            }
+        });
+
+    </script>
+</body>
+</html>
